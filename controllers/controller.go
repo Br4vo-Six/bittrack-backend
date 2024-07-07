@@ -4,27 +4,25 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-
-	"database/sql"
 
 	_ "github.com/lib/pq"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-
+	configs "bittrack-backend/models/configs"
 )
 
 type App struct {
 	Router *mux.Router
 }
 
+var config configs.Config
+
 // InitConfig get variable from config file .env
 func InitConfig(
-	apiPortConfig,
+	apiPortConfig string,
 ) {
 	config.APIPort = apiPortConfig
-
 }
 
 func (a *App) initializeRoutes() {
@@ -67,11 +65,6 @@ func (a *App) Delete(path string, f func(w http.ResponseWriter, r *http.Request)
 	a.Router.HandleFunc(path, f).Methods("DELETE")
 }
 
-// Delete wraps the router for DELETE method
-func (a *App) Options(path string, f func(w http.ResponseWriter, r *http.Request)) {
-	a.Router.HandleFunc(path, f).Methods("OPTIONS")
-}
-
 // RequestService represents generalized form of services
 type RequestService func(w http.ResponseWriter, r *http.Request)
 
@@ -85,7 +78,23 @@ func (a *App) handleRequest(handler RequestService) http.HandlerFunc {
 		if r.Method == "OPTIONS" {
             w.WriteHeader(http.StatusOK)
         }
-
-		handler(a.DB, config, logs, w, r)
 	}
+}
+
+func (a *App) Initialize() {
+	// var err error
+	// DBURI := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
+
+	// if _, err := os.Stat(config.FileStorage); os.IsNotExist(err) {
+	// 	os.Mkdir(config.FileStorage, 0700)
+	// }
+
+	// a.DB, err = sql.Open("postgres", DBURI)
+	// if err != nil {
+	// 	log.Fatal("Cannot connect to database : ", err)
+	// } else {
+	// 	log.Println("We are connected to the database ", DbName)
+	// }
+	a.Router = mux.NewRouter().StrictSlash(true)
+	a.initializeRoutes()
 }
